@@ -63,6 +63,7 @@ SOURCES := \
 	src/atom.c \
 	src/audio.c \
 	src/camera.c \
+	src/camera_scrolling.c \
 	src/display.c \
 	src/main.c \
 	src/player.c \

@@ -2,6 +2,7 @@
 #include "atom.h"
 #include "audio.h"
 #include "camera.h"
+#include "camera_scrolling.h"
 #include "display.h"
 #include "linalg.h"
 #include "player.h"
@@ -134,6 +135,7 @@ static void start_game_loop(
     struct camera_o* camera = camera_create((vec2_t){0, 0}, (vec2_t){DISPLAY_WIDTH, DISPLAY_HEIGHT});
     struct player_o* player = player_create(render);
     struct atom_system_o* atom_system = atom_system_create(render);
+    struct camera_scrolling_system_o* scroll = camera_scrolling_system_create();
 
     // @Todo: use SDL_GetPerformanceCounter() coupled with SDL_GetPerformanceFrequency().
     uint32_t last_time = SDL_GetTicks();
@@ -217,7 +219,8 @@ static void start_game_loop(
         while (time_accumulator >= UPDATE_STEP_MS)
         {
             camera_update(camera);
-            player_update(player);
+            player_update(player, UPDATE_STEP_MS);
+            camera_scrolling_system_update(scroll, camera, player);
             atom_system_update(atom_system, player, UPDATE_STEP_MS);
 
             time_accumulator -= UPDATE_STEP_MS;

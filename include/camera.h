@@ -11,10 +11,11 @@ struct camera_o* camera_create(vec2_t pos, vec2_t viewport);
 void camera_destroy(struct camera_o*);
 void camera_handle_event(struct camera_o*, SDL_Event event);
 void camera_update(struct camera_o*);
-vec2_t camera_pos(struct camera_o*);
+vec2_t camera_position(struct camera_o*);
 mat3_t camera_view(struct camera_o*);
 vec2_t camera_screen_to_world(struct camera_o*, vec2_t screen);
 vec2_t camera_world_to_screen(struct camera_o* camera, vec2_t world);
+void camera_look_at(struct camera_o*, vec2_t pos);
 
 #endif // CAMERA_H_
 

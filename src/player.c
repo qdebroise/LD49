@@ -20,6 +20,10 @@ struct player_o
     vec2_t dir;
     float bounding_circle_radius;
 
+    vec2_t target;
+    bool move;
+    float speed;
+
     SDL_Texture* texture;
 };
 
@@ -27,7 +31,7 @@ player_o* player_create(struct SDL_Renderer* render)
 {
     // @Note @Todo: see later about custom allocators.
     player_o* player = malloc(sizeof(struct player_o));
-    player->pos = (vec2_t){640, 360};
+    player->pos = (vec2_t){0, 0};
     player->bounding_circle_radius = PLAYER_SIZE;
     player->texture = load_bmp_to_texture(render, "assets/images/cat.bmp");
 
@@ -43,18 +47,47 @@ void player_destroy(struct player_o* player)
     free(player);
 }
 
-void player_update(struct player_o* player)
+void player_update(struct player_o* player, float dt)
 {
     assert(player);
+
+    static const float SLOWDOWN_FACTOR = 0.9f;
+    static const float DISTANCE_PERCENT = 0.005f;
+
+    // Slowdown.
+    if (!player->move)
+    {
+        player->speed *= SLOWDOWN_FACTOR;
+    }
+
+    player->speed = DISTANCE_PERCENT * vec2_dist(player->pos, player->target);
+    player->pos = vec2_add(player->pos, vec2_mul_scalar(player->dir, player->speed * dt));
 }
 
 void player_handle_event(struct player_o* player, struct camera_o* camera, SDL_Event event)
 {
     assert(player && camera);
 
-    if (event.type == SDL_MOUSEMOTION)
+    static const float INITIAL_SPEED = 0.01f;
+
+    if (event.type == SDL_MOUSEBUTTONDOWN)
     {
-        player->pos = camera_screen_to_world(camera, (vec2_t){event.motion.x, event.motion.y});
+        player->move = true;
+        player->speed = INITIAL_SPEED;
+
+        vec2_t mouse = camera_screen_to_world(camera, (vec2_t){event.button.x, event.button.y});
+        player->dir = vec2_normalize(vec2_sub(mouse, player->pos));
+        player->target = mouse;
+    }
+    else if (event.type == SDL_MOUSEBUTTONUP)
+    {
+        // player->move = false;
+    }
+    else if (event.type == SDL_MOUSEMOTION && player->move)
+    {
+        vec2_t mouse = camera_screen_to_world(camera, (vec2_t){event.button.x, event.button.y});
+        player->dir = vec2_normalize(vec2_sub(mouse, player->pos));
+        player->target = mouse;
     }
 }
 
@@ -74,4 +107,10 @@ bool player_intersect_circle(struct player_o* player, circle_t other)
 {
     assert(player);
     return circle_intersect((circle_t){player->pos, player->bounding_circle_radius}, other);
+}
+
+vec2_t player_position(const struct player_o* player)
+{
+    assert(player);
+    return player->pos;
 }

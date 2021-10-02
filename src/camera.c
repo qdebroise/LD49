@@ -78,7 +78,15 @@ mat3_t camera_view(struct camera_o* camera)
     return camera->view;
 }
 
-vec2_t camera_pos(struct camera_o* camera)
+vec2_t camera_position(struct camera_o* camera)
 {
     return camera->pos;
+}
+
+void camera_look_at(struct camera_o* camera, vec2_t pos)
+{
+    assert(camera);
+    camera->pos = pos;
+    camera->inv_view = mat3_translation(pos.x, pos.y);
+    camera->view = mat3_inverse(camera->inv_view);
 }
