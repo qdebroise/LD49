@@ -9,7 +9,7 @@ struct player_o;
 struct camera_o;
 struct SDL_Renderer;
 
-struct player_o* player_create(void);
+struct player_o* player_create(struct SDL_Renderer*);
 void player_destroy(struct player_o*);
 void player_update(struct player_o*);
 void player_handle_event(struct player_o*, struct camera_o*, SDL_Event event);

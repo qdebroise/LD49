@@ -65,6 +65,7 @@ SOURCES := \
 	src/display.c \
 	src/main.c \
 	src/player.c \
+	src/render.c \
 
 INCLUDE_DIRS := \
 	include

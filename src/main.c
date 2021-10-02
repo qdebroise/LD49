@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 {
     srand(time(NULL));
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
     {
         printf("Error initializing the SDL: %s\n", SDL_GetError());
         return 1;
@@ -30,9 +30,10 @@ int main(int argc, char* argv[])
     SDL_Renderer* render = display.render;
 
     struct camera_o* camera = camera_create((vec2_t){0, 0}, (vec2_t){DISPLAY_WIDTH, DISPLAY_HEIGHT});
-    struct player_o* player = player_create();
-    atom_t* atoms = atoms_generate(3);
+    struct player_o* player = player_create(render);
+    struct atom_system_o* atom_system = atom_system_create(render);
 
+    // @Todo: use SDL_GetPerformanceCounter() coupled with SDL_GetPerformanceFrequency().
     uint32_t last_time = SDL_GetTicks();
     uint32_t time_accumulator = 0;
     uint32_t update_frames = 0;
@@ -76,7 +77,7 @@ int main(int argc, char* argv[])
         {
 #ifndef DNDEBUG
             char title[256];
-            sprintf(title, "Render: %d FPS (%3.f ms/frame) - Update: %d UPS (%.3f ms/update)\n",
+            sprintf(title, "Render: %d FPS (%.3f ms/frame) - Update: %d UPS (%.3f ms/update)\n",
                 render_frames, 1000.0f / render_frames, update_frames, 1000.0f / update_frames);
             display_set_title(display, &title[0]);
 #endif
@@ -99,24 +100,24 @@ int main(int argc, char* argv[])
         {
             camera_update(camera);
             player_update(player);
-            atoms_update(atoms, player, UPDATE_STEP_MS);
+            atom_system_update(atom_system, player, UPDATE_STEP_MS);
 
             time_accumulator -= UPDATE_STEP_MS;
             update_frames += 1;
         }
 
         // Render
-        SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
+        SDL_SetRenderDrawColor(render, 104, 159, 56, 255);
         SDL_RenderClear(render);
 
         player_draw(player, camera, render);
-        atoms_draw(atoms, camera, render);
+        atom_system_draw(atom_system, camera, render);
 
         SDL_RenderPresent(render);
         render_frames += 1;
     }
 
-    atoms_destroy(atoms);
+    atom_system_destroy(atom_system);
     player_destroy(player);
     camera_destroy(camera);
 

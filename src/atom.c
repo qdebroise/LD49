@@ -4,14 +4,78 @@
 #include "camera.h"
 #include "linalg.h"
 #include "player.h"
+#include "render.h"
 
 #include <SDL2/SDL.h>
 
-#include <stdlib.h>
 #include <assert.h>
+#include <stdlib.h>
 
-atom_t* atoms_generate(uint32_t n)
+// @Todo: move this somewhere else.
+static const uint32_t ATOM_SIZE = 50;
+
+typedef struct atom_t atom_t;
+typedef struct atom_state_t atom_state_t;
+typedef struct neutron_t neutron_t;
+typedef struct atom_system_o atom_system_o;
+
+struct neutron_t
 {
+    vec2_t pos;
+    vec2_t dir;
+    float speed;
+    float bounding_circle_radius;
+};
+
+struct atom_state_t
+{
+    uint32_t num_exceeding_neutrons;
+    uint32_t unstability_duration_ms;
+};
+
+struct atom_t
+{
+    vec2_t pos;
+    atom_state_t state;
+    /* array */ neutron_t* neutrons;
+};
+
+// @Todo: change the API to atom_system_o, use neutrons pool and atom pool.
+struct atom_system_o
+{
+    atom_t* atoms;
+
+    SDL_Texture* texture;
+};
+
+struct atom_system_o* atom_system_create(struct SDL_Renderer* render)
+{
+    // @Note @Todo: see later about custom allocators.
+    struct atom_system_o* system = malloc(sizeof(struct atom_system_o));
+    system->atoms = NULL;
+    system->texture = load_bmp_to_texture(render, "assets/images/atom.bmp");
+    atom_system_generate_atoms(system, 5);
+
+    assert(system->texture);
+
+    return system;
+}
+
+void atom_system_destroy(struct atom_system_o* as)
+{
+    assert(as);
+
+    for (uint32_t i = 0; i < array_size(as->atoms); ++i)
+    {
+        array_free(as->atoms[i].neutrons);
+    }
+    array_free(as->atoms);
+}
+
+void atom_system_generate_atoms(struct atom_system_o* as, uint32_t n)
+{
+    assert(as);
+
     const int32_t lower_x = -1280 / 2;
     const int32_t upper_x = 1280 / 2;
     const int32_t lower_y = -720 / 2;
@@ -35,23 +99,22 @@ atom_t* atoms_generate(uint32_t n)
         array_push(atoms, atom);
     }
 
-    return atoms;
-}
-
-void atoms_destroy(atom_t* atoms)
-{
-    for (uint32_t i = 0; i < array_size(atoms); ++i)
+    if (as->atoms)
     {
-        array_free(atoms->neutrons);
+        array_free(as->atoms);
+        as->atoms = NULL;
     }
-    array_free(atoms);
+
+    as->atoms = atoms;
 }
 
-void atoms_update(atom_t* atoms, struct player_o* player, float dt)
+void atom_system_update(struct atom_system_o* as, struct player_o* player, float dt)
 {
-    for (uint32_t i = 0; i < array_size(atoms); ++i)
+    assert(as && player);
+
+    for (uint32_t i = 0; i < array_size(as->atoms); ++i)
     {
-        atom_t* atom = &atoms[i];
+        atom_t* atom = &as->atoms[i];
 
         if (array_empty(atom->neutrons) && atom->state.num_exceeding_neutrons > 0)
         {
@@ -111,16 +174,16 @@ void atoms_update(atom_t* atoms, struct player_o* player, float dt)
     }
 }
 
-void atoms_draw(const atom_t* atoms, struct camera_o* camera, struct SDL_Renderer* render)
+void atom_system_draw(struct atom_system_o* as, struct camera_o* camera, struct SDL_Renderer* render)
 {
-    assert(camera && render);
+    assert(as && camera && render);
 
-    for (uint32_t i = 0; i < array_size(atoms); ++i)
+    for (uint32_t i = 0; i < array_size(as->atoms); ++i)
     {
-        atom_t atom = atoms[i];
+        atom_t atom = as->atoms[i];
 
-        vec2_t bl = {atom.pos.x - 20, atom.pos.y - 20};
-        vec2_t tr = {atom.pos.x + 20, atom.pos.y + 20};
+        vec2_t bl = {atom.pos.x - ATOM_SIZE, atom.pos.y - ATOM_SIZE};
+        vec2_t tr = {atom.pos.x + ATOM_SIZE, atom.pos.y + ATOM_SIZE};
 
         vec2_t screen_bl = camera_world_to_screen(camera, bl);
         vec2_t screen_tr = camera_world_to_screen(camera, tr);
@@ -139,6 +202,7 @@ void atoms_draw(const atom_t* atoms, struct camera_o* camera, struct SDL_Rendere
         // SDL_RenderFillRect needs top-left corner and not bottom-left.
         // SDL_RenderFillRect(render, &(SDL_Rect){screen_bl.x, screen_bl.y - height, width, height});
         SDL_RenderDrawRect(render, &(SDL_Rect){screen_bl.x, screen_bl.y - height, width, height});
+        SDL_RenderCopy(render, as->texture, NULL, &(SDL_Rect){screen_bl.x, screen_bl.y - height, width, height});
 
         SDL_SetRenderDrawColor(render, 0, 255, 0, 255);
         for (uint32_t j = 0; j < array_size(atom.neutrons); ++j)
