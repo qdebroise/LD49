@@ -1,5 +1,6 @@
 #include "array.h"
 #include "atom.h"
+#include "audio.h"
 #include "camera.h"
 #include "display.h"
 #include "linalg.h"
@@ -29,6 +30,7 @@ int main(int argc, char* argv[])
     display_t display = display_create(DISPLAY_WIDTH, DISPLAY_HEIGHT);
     SDL_Renderer* render = display.render;
 
+    struct audio_system_o* audio_system = audio_system_create();
     struct camera_o* camera = camera_create((vec2_t){0, 0}, (vec2_t){DISPLAY_WIDTH, DISPLAY_HEIGHT});
     struct player_o* player = player_create(render);
     struct atom_system_o* atom_system = atom_system_create(render);
@@ -62,6 +64,15 @@ int main(int argc, char* argv[])
                 {
                     case SDLK_ESCAPE:
                         running = false;
+                        break;
+                    case SDLK_UP:
+                        audio_play_sound(audio_system, AUDIO_ENTRY_LASER);
+                        break;
+                    case SDLK_DOWN:
+                        audio_play_sound(audio_system, AUDIO_ENTRY_MUSIC);
+                        break;
+                    case SDLK_RIGHT:
+                        audio_play_sound(audio_system, AUDIO_ENTRY_EXPLOSION);
                         break;
                     default: break;
                 }
@@ -121,6 +132,7 @@ int main(int argc, char* argv[])
     player_destroy(player);
     camera_destroy(camera);
 
+    audio_system_destroy(audio_system);
     display_destroy(display);
     SDL_Quit();
     return 0;

@@ -61,6 +61,7 @@ TARGET := $(BIN_DIR)/$(TARGET_NAME)
 
 SOURCES := \
 	src/atom.c \
+	src/audio.c \
 	src/camera.c \
 	src/display.c \
 	src/main.c \
