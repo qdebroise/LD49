@@ -60,6 +60,7 @@ TARGET := $(BIN_DIR)/$(TARGET_NAME)
 # Warning: files *MUST* have unique filename across the whole codebase.
 
 SOURCES := \
+	src/atom.c \
 	src/camera.c \
 	src/display.c \
 	src/main.c \

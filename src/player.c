@@ -13,6 +13,7 @@ struct player_o
 {
     vec2_t pos;
     vec2_t dir;
+    float bounding_circle_radius;
 };
 
 player_o* player_create(void)
@@ -20,6 +21,7 @@ player_o* player_create(void)
     // @Note @Todo: see later about custom allocators.
     player_o* player = malloc(sizeof(struct player_o));
     player->pos = (vec2_t){0, 0};
+    player->bounding_circle_radius = 10;
     return player;
 }
 
@@ -46,7 +48,7 @@ void player_handle_event(struct player_o* player, struct camera_o* camera, SDL_E
 
 void player_draw(struct player_o* player, struct camera_o* camera, struct SDL_Renderer* render)
 {
-    assert(player && camera);
+    assert(player && camera && render);
 
     vec2_t bl = {player->pos.x - 10, player->pos.y - 10};
     vec2_t tr = {player->pos.x + 10, player->pos.y + 10};
@@ -59,4 +61,10 @@ void player_draw(struct player_o* player, struct camera_o* camera, struct SDL_Re
     SDL_SetRenderDrawColor(render, 255, 0, 0, 255);
     // SDL_RenderFillRect needs top-left corner and not bottom-left.
     SDL_RenderFillRect(render, &(SDL_Rect){screen_bl.x, screen_bl.y - height, width, height});
+}
+
+bool player_intersect_circle(struct player_o* player, circle_t other)
+{
+    assert(player);
+    return circle_intersect((circle_t){player->pos, player->bounding_circle_radius}, other);
 }

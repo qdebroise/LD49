@@ -1,3 +1,5 @@
+#include "array.h"
+#include "atom.h"
 #include "camera.h"
 #include "display.h"
 #include "linalg.h"
@@ -8,26 +10,28 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <time.h>
 
-static const uint32_t WINDOW_WIDTH = 1280;
-static const uint32_t WINDOW_HEIGHT = 720;
+static const uint32_t DISPLAY_WIDTH = 1280;
+static const uint32_t DISPLAY_HEIGHT = 720;
 
 int main(int argc, char* argv[])
 {
+    srand(time(NULL));
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         printf("Error initializing the SDL: %s\n", SDL_GetError());
         return 1;
     }
 
-    display_t display = display_create(WINDOW_WIDTH, WINDOW_HEIGHT);
+    display_t display = display_create(DISPLAY_WIDTH, DISPLAY_HEIGHT);
     SDL_Renderer* render = display.render;
 
-    // Model defined around it origin point, (0, 0) generally.
-    // vec3_t bl = {-50, -50, 1};
-    // vec3_t tr = {50, 50, 1};
-    struct camera_o* camera = camera_create((vec2_t){0, 0}, (vec2_t){WINDOW_WIDTH, WINDOW_HEIGHT});
+    struct camera_o* camera = camera_create((vec2_t){0, 0}, (vec2_t){DISPLAY_WIDTH, DISPLAY_HEIGHT});
     struct player_o* player = player_create();
+    atom_t* atoms = atoms_generate(3);
 
     uint32_t last_time = SDL_GetTicks();
     uint32_t time_accumulator = 0;
@@ -36,7 +40,7 @@ int main(int argc, char* argv[])
     uint32_t timer_ms = SDL_GetTicks();
 
     // Run the update loop at a fixed timestep at about 60 UPS (Update Per Second).
-    const uint32_t UPDATE_STEP_MS = 1000 / 60;
+    static const uint32_t UPDATE_STEP_MS = 1000 / 60;
 
     bool running = true;
     while (running)
@@ -60,9 +64,6 @@ int main(int argc, char* argv[])
                         break;
                     default: break;
                 }
-            }
-            else if (event.type == SDL_KEYUP)
-            {
             }
         }
 
@@ -96,33 +97,26 @@ int main(int argc, char* argv[])
 
         while (time_accumulator >= UPDATE_STEP_MS)
         {
-            // View matrix computation.
-            // mat3_t scaling = mat3_scaling(fabs(cos(angle)) + 0.5);
-            // mat3_t translation = mat3_translation(cam.x, cam.y);
-            // mat3_t inv_view = mat3_mul(translation, scaling);
-            // mat3_t view = mat3_inverse(inv_view);
+            camera_update(camera);
+            player_update(player);
+            atoms_update(atoms, player, UPDATE_STEP_MS);
 
             time_accumulator -= UPDATE_STEP_MS;
             update_frames += 1;
         }
-
-        // Transformation pipeline.
-        // vec2_t viewport = {1280, 720};
-        // vec2_t ndc = {center.x / viewport.x + 0.5, 1 - (center.y / viewport.y + 0.5)};
-        // vec2_t screen = {ndc.x * viewport.x, ndc.y * viewport.y};
 
         // Render
         SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
         SDL_RenderClear(render);
 
         player_draw(player, camera, render);
-        // SDL_SetRenderDrawColor(r, 255, 0, 0, 255);
-        // SDL_RenderFillRect(r, &(SDL_Rect){screen.x - width / 2, screen.y - height / 2, width, height});
+        atoms_draw(atoms, camera, render);
 
         SDL_RenderPresent(render);
         render_frames += 1;
     }
 
+    atoms_destroy(atoms);
     player_destroy(player);
     camera_destroy(camera);
 
