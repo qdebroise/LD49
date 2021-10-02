@@ -1,5 +1,7 @@
+#include "camera.h"
 #include "display.h"
 #include "linalg.h"
+#include "player.h"
 
 #include <SDL2/SDL.h>
 
@@ -19,17 +21,18 @@ int main(int argc, char* argv[])
     }
 
     display_t display = display_create(WINDOW_WIDTH, WINDOW_HEIGHT);
-    SDL_Renderer* r = display.render;
+    SDL_Renderer* render = display.render;
 
     // Model defined around it origin point, (0, 0) generally.
     // vec3_t bl = {-50, -50, 1};
     // vec3_t tr = {50, 50, 1};
+    struct camera_o* camera = camera_create((vec2_t){0, 0}, (vec2_t){WINDOW_WIDTH, WINDOW_HEIGHT});
+    struct player_o* player = player_create();
 
     uint32_t last_time = SDL_GetTicks();
     uint32_t time_accumulator = 0;
     uint32_t update_frames = 0;
     uint32_t render_frames = 0;
-    uint32_t frametime_sum_ms = 0;
     uint32_t timer_ms = SDL_GetTicks();
 
     // Run the update loop at a fixed timestep at about 60 UPS (Update Per Second).
@@ -41,6 +44,9 @@ int main(int argc, char* argv[])
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
+            camera_handle_event(camera, event);
+            player_handle_event(player, camera, event);
+
             if (event.type == SDL_QUIT)
             {
                 running = false;
@@ -106,15 +112,19 @@ int main(int argc, char* argv[])
         // vec2_t screen = {ndc.x * viewport.x, ndc.y * viewport.y};
 
         // Render
-        SDL_SetRenderDrawColor(r, 0, 0, 0, 0);
-        SDL_RenderClear(r);
+        SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
+        SDL_RenderClear(render);
 
+        player_draw(player, camera, render);
         // SDL_SetRenderDrawColor(r, 255, 0, 0, 255);
         // SDL_RenderFillRect(r, &(SDL_Rect){screen.x - width / 2, screen.y - height / 2, width, height});
 
-        SDL_RenderPresent(r);
+        SDL_RenderPresent(render);
         render_frames += 1;
     }
+
+    player_destroy(player);
+    camera_destroy(camera);
 
     display_destroy(display);
     SDL_Quit();
