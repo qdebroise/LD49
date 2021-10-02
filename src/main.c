@@ -8,6 +8,7 @@
 
 #include <SDL2/SDL.h>
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -17,18 +18,116 @@
 static const uint32_t DISPLAY_WIDTH = 1280;
 static const uint32_t DISPLAY_HEIGHT = 720;
 
-int main(int argc, char* argv[])
+// @Todo: the way game states are managed is crap. :(
+enum game_state
 {
-    srand(time(NULL));
+    GAME_STATE_TITLESCREEN,
+    GAME_STATE_PLAYING,
+    GAME_STATE_CREDITS,
+    GAME_STATE_QUIT,
+};
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
+typedef struct game_t
+{
+    enum game_state state;
+} game_t;
+
+static inline SDL_Rect bbox2_to_sdl_rect(bbox2_t bbox)
+{
+    const vec2_t size = bbox2_size(bbox);
+    return (SDL_Rect){
+        .x = bbox.min.x,
+        .y = bbox.min.y,
+        .w = size.x,
+        .h = size.y,
+    };
+}
+
+static void start_titlescreen_loop(struct display_o* display, game_t* game_ctx)
+{
+    SDL_Renderer* render = display_get_renderer(display);
+
+    vec2_t center = {DISPLAY_WIDTH / 2.0f, DISPLAY_HEIGHT / 2.0f};
+    vec2_t button_size = {400, 100};
+
+    float play_vertical_offset = 10;
+    float quit_vertical_offset = 200;
+
+    bbox2_t play_bbox = {
+        {center.x - button_size.x/2, center.y - button_size.y/2 + play_vertical_offset},
+        {center.x + button_size.x/2, center.y + button_size.y/2 + play_vertical_offset}};
+    bbox2_t quit_bbox = {
+        {center.x - button_size.x/2, center.y - button_size.y/2 + quit_vertical_offset},
+        {center.x + button_size.x/2, center.y + button_size.y/2 + quit_vertical_offset}};
+
+    while (1)
     {
-        printf("Error initializing the SDL: %s\n", SDL_GetError());
-        return 1;
-    }
+        //
+        // Events
+        //
 
-    struct display_o* display = display_create(DISPLAY_WIDTH, DISPLAY_HEIGHT);
-    struct audio_system_o* audio_system = audio_system_create();
+        SDL_Event event;
+        while (SDL_PollEvent(&event))
+        {
+            if (event.type == SDL_QUIT)
+            {
+                game_ctx->state = GAME_STATE_QUIT;
+                return;
+            }
+            else if (event.type == SDL_KEYDOWN)
+            {
+                switch (event.key.keysym.sym)
+                {
+                    case SDLK_ESCAPE:
+                        game_ctx->state = GAME_STATE_QUIT;
+                        return;
+                    default: break;
+                }
+            }
+            else if (event.type == SDL_MOUSEBUTTONDOWN)
+            {
+                vec2_t mouse_pos = {event.button.x, event.button.y};
+
+                if (bbox2_contain(play_bbox, mouse_pos))
+                {
+                    game_ctx->state = GAME_STATE_PLAYING;
+                    return;
+                }
+                else if (bbox2_contain(quit_bbox, mouse_pos))
+                {
+                    game_ctx->state = GAME_STATE_QUIT;
+                    return;
+                }
+            }
+        }
+
+        //
+        // Render
+        //
+
+        SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
+        SDL_RenderClear(render);
+
+        SDL_Rect play_rect = bbox2_to_sdl_rect(play_bbox);
+        SDL_Rect quit_rect = bbox2_to_sdl_rect(quit_bbox);
+
+        SDL_SetRenderDrawColor(render, 0, 255, 0, 255);
+        SDL_RenderFillRect(render, &play_rect);
+        SDL_SetRenderDrawColor(render, 255, 0, 0, 255);
+        SDL_RenderFillRect(render, &quit_rect);
+
+        SDL_RenderPresent(render);
+
+        SDL_Delay(100); // Static menu so we can delay quit a lot.
+    }
+}
+
+static void start_game_loop(
+    struct display_o* display,
+    struct audio_system_o* audio_system,
+    game_t* game_ctx)
+{
+    assert(game_ctx->state == GAME_STATE_PLAYING);
 
     SDL_Renderer* render = display_get_renderer(display);
 
@@ -46,9 +145,12 @@ int main(int argc, char* argv[])
     // Run the update loop at a fixed timestep at about 60 UPS (Update Per Second).
     static const uint32_t UPDATE_STEP_MS = 1000 / 60;
 
-    bool running = true;
-    while (running)
+    while (1)
     {
+        //
+        // Events
+        //
+
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
@@ -57,15 +159,16 @@ int main(int argc, char* argv[])
 
             if (event.type == SDL_QUIT)
             {
-                running = false;
+                game_ctx->state = GAME_STATE_QUIT;
+                return;
             }
             else if (event.type == SDL_KEYDOWN)
             {
                 switch (event.key.keysym.sym)
                 {
                     case SDLK_ESCAPE:
-                        running = false;
-                        break;
+                        game_ctx->state = GAME_STATE_QUIT;
+                        return;
                     case SDLK_UP:
                         audio_play_sound(audio_system, AUDIO_ENTRY_LASER);
                         break;
@@ -80,7 +183,10 @@ int main(int argc, char* argv[])
             }
         }
 
+        //
         // Logic
+        //
+
         const uint32_t now = SDL_GetTicks();
         const uint32_t elapsed = now - last_time;
         const uint32_t timer_elapsed = now - timer_ms;
@@ -118,7 +224,10 @@ int main(int argc, char* argv[])
             update_frames += 1;
         }
 
+        //
         // Render
+        //
+
         SDL_SetRenderDrawColor(render, 104, 159, 56, 255);
         SDL_RenderClear(render);
 
@@ -129,9 +238,37 @@ int main(int argc, char* argv[])
         render_frames += 1;
     }
 
+    // Cleanup
+
     atom_system_destroy(atom_system);
     player_destroy(player);
     camera_destroy(camera);
+}
+
+int main(int argc, char* argv[])
+{
+    srand(time(NULL));
+
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
+    {
+        printf("Error initializing the SDL: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    struct display_o* display = display_create(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    struct audio_system_o* audio_system = audio_system_create();
+
+    // Init + main loop
+    game_t game_ctx = {
+        .state = GAME_STATE_PLAYING,
+    };
+
+    start_titlescreen_loop(display, &game_ctx);
+
+    if (game_ctx.state == GAME_STATE_PLAYING)
+    {
+        start_game_loop(display, audio_system, &game_ctx);
+    }
 
     audio_system_destroy(audio_system);
     display_destroy(display);

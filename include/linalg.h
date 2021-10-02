@@ -176,6 +176,7 @@ struct bbox2_t
 static inline vec2_t bbox2_center(bbox2_t b) { return vec2_mul_scalar(vec2_add(b.min, b.max), 0.5f); }
 static inline bool bbox2_contain(bbox2_t b, vec2_t v) { return !(v.x < b.min.x || v.x > b.max.x || v.y < b.min.y || v.y > b.max.y); }
 static inline bool bbox2_intersect(bbox2_t b1, bbox2_t b2) { return !(b1.max.x < b2.min.x || b1.min.x > b2.max.x || b1.max.y < b2.min.y || b1.min.y > b2.max.y); }
+static inline vec2_t bbox2_size(bbox2_t b) { return (vec2_t){fabs(b.max.x - b.min.x), fabs(b.max.y - b.min.y)}; }
 
 //
 // Circle maths
