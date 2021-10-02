@@ -66,6 +66,8 @@ void audio_system_destroy(struct audio_system_o* audio)
         SDL_CloseAudioDevice(audio->samples[i].device_handle);
         SDL_FreeWAV(audio->samples[i].wav_buffer);
     }
+
+    free(audio);
 }
 
 void audio_play_sound(const struct audio_system_o* audio, enum AudioEntry entry)

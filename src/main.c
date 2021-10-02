@@ -27,10 +27,11 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    display_t display = display_create(DISPLAY_WIDTH, DISPLAY_HEIGHT);
-    SDL_Renderer* render = display.render;
-
+    struct display_o* display = display_create(DISPLAY_WIDTH, DISPLAY_HEIGHT);
     struct audio_system_o* audio_system = audio_system_create();
+
+    SDL_Renderer* render = display_get_renderer(display);
+
     struct camera_o* camera = camera_create((vec2_t){0, 0}, (vec2_t){DISPLAY_WIDTH, DISPLAY_HEIGHT});
     struct player_o* player = player_create(render);
     struct atom_system_o* atom_system = atom_system_create(render);

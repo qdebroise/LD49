@@ -6,20 +6,12 @@
 struct SDL_Window;
 struct SDL_Renderer;
 
-typedef struct display_t display_t;
+struct display_o;
 
-struct display_t
-{
-    struct SDL_Window* window;
-    struct SDL_Renderer* render;
-
-    uint32_t logical_width;
-    uint32_t logical_height;
-};
-
-display_t display_create(uint32_t width, uint32_t height);
-void display_destroy(display_t);
-void display_set_title(display_t, const char* title);
+struct display_o* display_create(uint32_t width, uint32_t height);
+void display_destroy(struct display_o*);
+void display_set_title(struct display_o*, const char* title);
+struct SDL_Renderer* display_get_renderer(struct display_o*);
 
 #endif // DISPLAY_H_
 

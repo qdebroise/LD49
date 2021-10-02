@@ -70,6 +70,8 @@ void atom_system_destroy(struct atom_system_o* as)
         array_free(as->atoms[i].neutrons);
     }
     array_free(as->atoms);
+
+    free(as);
 }
 
 void atom_system_generate_atoms(struct atom_system_o* as, uint32_t n)
