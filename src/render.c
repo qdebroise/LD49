@@ -1,4 +1,5 @@
 #include "render.h"
+#include "camera.h"
 
 #include <SDL2/SDL.h>
 
@@ -23,4 +24,19 @@ SDL_Texture* load_bmp_to_texture(struct SDL_Renderer* render, const char* file)
 
     SDL_FreeSurface(surface);
     return texture;
+}
+
+SDL_Rect sdl_rect_from_pos_and_size(struct camera_o* camera, vec2_t pos, vec2_t size)
+{
+    vec2_t bl = {pos.x - size.x, pos.y - size.y};
+    vec2_t tr = {pos.x + size.x, pos.y + size.y};
+
+    vec2_t screen_bl = camera_world_to_screen(camera, bl);
+    vec2_t screen_tr = camera_world_to_screen(camera, tr);
+
+    float width = fabs(screen_tr.x - screen_bl.x);
+    float height = fabs(screen_tr.y - screen_bl.y);
+
+    // SDL_RenderFillRect needs top-left corner and not bottom-left hence the `- height`.
+    return (SDL_Rect){screen_bl.x, screen_bl.y - height, width, height};
 }

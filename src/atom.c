@@ -13,6 +13,7 @@
 
 // @Todo: move this somewhere else.
 static const uint32_t ATOM_SIZE = 50;
+static const uint32_t NEUTRON_SIZE = 10;
 
 typedef struct atom_t atom_t;
 typedef struct atom_state_t atom_state_t;
@@ -132,8 +133,8 @@ void atom_system_update(struct atom_system_o* as, struct player_o* player, float
             neutron_t neutron = {
                 .pos = atom->pos,
                 .dir = dir,
-                .speed = ((float)rand() / RAND_MAX) * 5 + 0.1,
-                .bounding_circle_radius = 5,
+                .speed = ((float)rand() / RAND_MAX) * 0.5f,
+                .bounding_circle_radius = NEUTRON_SIZE,
             };
 
             // printf("Emitting neutron: %f %f %f %f %f\n", neutron.pos.x, neutron.pos.y, neutron.dir.x, neutron.dir.y, neutron.speed);
@@ -151,7 +152,7 @@ void atom_system_update(struct atom_system_o* as, struct player_o* player, float
             if (player_intersect_circle(
                     player, (circle_t){neutron->pos, neutron->bounding_circle_radius}))
             {
-                printf("You die\n");
+                // @Todo: player hit
                 delete_neutron = true;
             }
             // @Todo: this is only temporary. Need proper boundary checking.
@@ -184,36 +185,23 @@ void atom_system_draw(struct atom_system_o* as, struct camera_o* camera, struct 
     {
         atom_t atom = as->atoms[i];
 
-        vec2_t bl = {atom.pos.x - ATOM_SIZE, atom.pos.y - ATOM_SIZE};
-        vec2_t tr = {atom.pos.x + ATOM_SIZE, atom.pos.y + ATOM_SIZE};
+        SDL_Rect rect = sdl_rect_from_pos_and_size(camera, atom.pos, (vec2_t){ATOM_SIZE, ATOM_SIZE});
 
-        vec2_t screen_bl = camera_world_to_screen(camera, bl);
-        vec2_t screen_tr = camera_world_to_screen(camera, tr);
-        float width = fabs(screen_tr.x - screen_bl.x);
-        float height = fabs(screen_tr.y - screen_bl.y);
+        atom.state.num_exceeding_neutrons == 0
+            ? SDL_SetRenderDrawColor(render, 255, 0, 0, 255)
+            : SDL_SetRenderDrawColor(render, 0, 0, 255, 255);
 
-        if (atom.state.num_exceeding_neutrons == 0)
-        {
-            SDL_SetRenderDrawColor(render, 255, 0, 0, 255);
-        }
-        else
-        {
-            SDL_SetRenderDrawColor(render, 0, 0, 255, 255);
-        }
+        SDL_RenderDrawRect(render, &rect);
+        SDL_RenderCopy(render, as->texture, NULL, &rect);
 
-        // SDL_RenderFillRect needs top-left corner and not bottom-left.
-        // SDL_RenderFillRect(render, &(SDL_Rect){screen_bl.x, screen_bl.y - height, width, height});
-        SDL_RenderDrawRect(render, &(SDL_Rect){screen_bl.x, screen_bl.y - height, width, height});
-        SDL_RenderCopy(render, as->texture, NULL, &(SDL_Rect){screen_bl.x, screen_bl.y - height, width, height});
-
-        SDL_SetRenderDrawColor(render, 0, 255, 0, 255);
+        SDL_SetRenderDrawColor(render, 255, 255, 255, 255);
         for (uint32_t j = 0; j < array_size(atom.neutrons); ++j)
         {
             const neutron_t* neutron = &atom.neutrons[j];
 
-            vec2_t screen = camera_world_to_screen(camera, neutron->pos);
-            // SDL_RenderDrawPoint(render, screen.x, screen.y);
-            SDL_RenderFillRect(render, &(SDL_Rect){screen.x, screen.y - 5, 5, 5});
+            SDL_Rect rect = sdl_rect_from_pos_and_size(
+                camera, neutron->pos, (vec2_t){NEUTRON_SIZE, NEUTRON_SIZE});
+            SDL_RenderFillRect(render, &rect);
         }
     }
 }

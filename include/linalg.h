@@ -53,7 +53,7 @@ static inline vec2_t vec2_normal(vec2_t v) { return (vec2_t){-v.y, v.x}; }
 static inline vec2_t vec2_normalize(vec2_t v) { return vec2_mul_scalar(v, 1.0f / vec2_length(v)); }
 static inline vec2_t vec2_lerp(vec2_t v1, vec2_t v2, float t) { return (vec2_t){lerp(v1.x, v2.x, t), lerp(v1.y, v2.y, t)}; }
 static inline float vec2_dist(vec2_t v1, vec2_t v2) { return vec2_length(vec2_sub(v1, v2)); }
-static inline float vec2_dist_sq(vec2_t v1, vec2_t v2) { return vec2_length_sq(vec2_sub(v1, v2)); }
+static inline float vec2_dist_sq(vec2_t v1, vec2_t v2) { return vec2_length_sq(vec2_sub(v2, v1)); }
 static inline float vec2_angle(vec2_t v1, vec2_t v2) { return atan2(v2.y, v2.x) - atan2(v1.y, v1.x); }
 
 static inline vec2_t vec2_scale(vec2_t v, float s) { return vec2_mul_scalar(v, s); }
@@ -191,7 +191,7 @@ struct circle_t
 };
 
 static inline bool circle_contain(circle_t c, vec2_t v) { return vec2_dist_sq(c.center, v) <= c.radius*c.radius; }
-static inline bool circle_intersect(circle_t c1, circle_t c2) { return vec2_dist_sq(c1.center, c2.center) <= (c1.radius+c2.radius)*(c1.radius*c2.radius); }
+static inline bool circle_intersect(circle_t c1, circle_t c2) { return vec2_dist_sq(c1.center, c2.center) <= (c1.radius+c2.radius)*(c1.radius+c2.radius); }
 
 //
 // Ray maths
