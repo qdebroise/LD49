@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-static const char* GAME_TITLE = "LD49 - Schrodinger's cat";
+static const char* GAME_TITLE = "LD49 - Death?Box";
 static const uint32_t DISPLAY_WIDTH = 1280;
 static const uint32_t DISPLAY_HEIGHT = 720;
 
@@ -47,11 +47,96 @@ static inline SDL_Rect bbox2_to_sdl_rect(bbox2_t bbox)
     };
 }
 
+static void start_credit_loop(struct display_o* display, game_t* game_ctx)
+{
+    assert(game_ctx->state == GAME_STATE_CREDITS);
+
+    SDL_Renderer* render = display_get_renderer(display);
+    SDL_Texture* credit_texture = load_bmp_to_texture(render, "assets/images/credits.bmp");
+    SDL_Texture* back_texture = load_bmp_to_texture(render, "assets/images/back.bmp");
+
+    vec2_t center = {DISPLAY_WIDTH / 2.0f, DISPLAY_HEIGHT / 2.0f};
+    vec2_t button_size = {400, 100};
+
+    float vertical_offset = 250;
+
+    bbox2_t back_bbox = {
+        {center.x - button_size.x/2, center.y - button_size.y/2 + vertical_offset},
+        {center.x + button_size.x/2, center.y + button_size.y/2 + vertical_offset}};
+
+    SDL_Rect credits_rect = {
+        DISPLAY_WIDTH / 2 - 200,
+        100,
+        640,
+        360,
+    };
+
+    bool running = true;
+    while (running)
+    {
+        //
+        // Events
+        //
+
+        SDL_Event event;
+        while (SDL_PollEvent(&event))
+        {
+            if (event.type == SDL_QUIT)
+            {
+                game_ctx->state = GAME_STATE_QUIT;
+                running = false;
+                break;
+            }
+            else if (event.type == SDL_KEYDOWN)
+            {
+                switch (event.key.keysym.sym)
+                {
+                    case SDLK_ESCAPE:
+                        game_ctx->state = GAME_STATE_QUIT;
+                        running = false;
+                        break;
+                    default: break;
+                }
+            }
+            else if (event.type == SDL_MOUSEBUTTONDOWN)
+            {
+                vec2_t mouse_pos = {event.button.x, event.button.y};
+
+                if (bbox2_contain(back_bbox, mouse_pos))
+                {
+                    game_ctx->state = GAME_STATE_TITLESCREEN;
+                    return;
+                }
+            }
+        }
+
+        //
+        // Render
+        //
+
+        SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
+        SDL_RenderClear(render);
+        SDL_Rect back_rect = bbox2_to_sdl_rect(back_bbox);
+        SDL_RenderCopy(render, back_texture, NULL, &back_rect);
+        SDL_RenderCopy(render, credit_texture, NULL, &credits_rect);
+        SDL_RenderPresent(render);
+
+        SDL_Delay(100); // Static menu so we can delay quit a lot.
+    }
+
+    SDL_DestroyTexture(credit_texture);
+    SDL_DestroyTexture(back_texture);
+}
+
 static void start_titlescreen_loop(struct display_o* display, game_t* game_ctx)
 {
+    assert(game_ctx->state == GAME_STATE_TITLESCREEN);
+
     SDL_Renderer* render = display_get_renderer(display);
     SDL_Texture* play_texture = load_bmp_to_texture(render, "assets/images/play_button.bmp");
     SDL_Texture* quit_texture = load_bmp_to_texture(render, "assets/images/quit_button.bmp");
+    SDL_Texture* to_credits_texture = load_bmp_to_texture(render, "assets/images/to_credits.bmp");
+    SDL_Texture* title_texture = load_bmp_to_texture(render, "assets/images/title.bmp");
 
     vec2_t center = {DISPLAY_WIDTH / 2.0f, DISPLAY_HEIGHT / 2.0f};
     vec2_t button_size = {400, 100};
@@ -65,6 +150,19 @@ static void start_titlescreen_loop(struct display_o* display, game_t* game_ctx)
     bbox2_t quit_bbox = {
         {center.x - button_size.x/2, center.y - button_size.y/2 + quit_vertical_offset},
         {center.x + button_size.x/2, center.y + button_size.y/2 + quit_vertical_offset}};
+
+    vec2_t credit_size = {50, 50};
+    vec2_t credit_center = {DISPLAY_WIDTH - credit_size.x / 2 - 20, credit_size.y / 2 + 20};
+    bbox2_t credit_bbox = {
+        {credit_center.x - credit_size.x/2, credit_center.y - credit_size.y/2},
+        {credit_center.x + credit_size.x/2, credit_center.y + credit_size.y/2}};
+
+    SDL_Rect title_rect = {
+        DISPLAY_WIDTH / 2 - 200,
+        100,
+        400,
+        200,
+    };
 
     while (1)
     {
@@ -104,6 +202,11 @@ static void start_titlescreen_loop(struct display_o* display, game_t* game_ctx)
                     game_ctx->state = GAME_STATE_QUIT;
                     return;
                 }
+                else if (bbox2_contain(credit_bbox, mouse_pos))
+                {
+                    game_ctx->state = GAME_STATE_CREDITS;
+                    return;
+                }
             }
         }
 
@@ -116,9 +219,12 @@ static void start_titlescreen_loop(struct display_o* display, game_t* game_ctx)
 
         SDL_Rect play_rect = bbox2_to_sdl_rect(play_bbox);
         SDL_Rect quit_rect = bbox2_to_sdl_rect(quit_bbox);
+        SDL_Rect credit_rect = bbox2_to_sdl_rect(credit_bbox);
 
         SDL_RenderCopy(render, play_texture, NULL, &play_rect);
         SDL_RenderCopy(render, quit_texture, NULL, &quit_rect);
+        SDL_RenderCopy(render, to_credits_texture, NULL, &credit_rect);
+        SDL_RenderCopy(render, title_texture, NULL, &title_rect);
 
         SDL_RenderPresent(render);
 
@@ -127,6 +233,8 @@ static void start_titlescreen_loop(struct display_o* display, game_t* game_ctx)
 
     SDL_DestroyTexture(play_texture);
     SDL_DestroyTexture(quit_texture);
+    SDL_DestroyTexture(to_credits_texture);
+    SDL_DestroyTexture(title_texture);
 }
 
 static void start_game_loop(
@@ -241,7 +349,7 @@ static void start_game_loop(
             if (win_count == 3)
             {
                 printf("Win!\n");
-                game_ctx->state = GAME_STATE_CREDIT;
+                game_ctx->state = GAME_STATE_CREDITS;
                 running = false;
             }
 
@@ -297,19 +405,24 @@ int main(int argc, char* argv[])
 
     // Init + main loop
     game_t game_ctx = {
-        .state = GAME_STATE_PLAYING,
+        .state = GAME_STATE_TITLESCREEN,
     };
 
-    start_titlescreen_loop(display, &game_ctx);
-
-    if (game_ctx.state == GAME_STATE_PLAYING)
+    // @Todo: textures shouldn't be reloaded every time but store somewhere else. Kind of like the
+    // audio stuff. But anyway, the game is small so nothing noticeable here :)
+    while (game_ctx.state != GAME_STATE_QUIT)
     {
-        start_game_loop(display, audio_system, &game_ctx);
-    }
+        start_titlescreen_loop(display, &game_ctx);
 
-    if (game_ctx.state == GAME_STATE_CREDIT)
-    {
-        start_credit_loop(display, &game_ctx);
+        if (game_ctx.state == GAME_STATE_PLAYING)
+        {
+            start_game_loop(display, audio_system, &game_ctx);
+        }
+
+        if (game_ctx.state == GAME_STATE_CREDITS)
+        {
+            start_credit_loop(display, &game_ctx);
+        }
     }
 
     audio_system_destroy(audio_system);
