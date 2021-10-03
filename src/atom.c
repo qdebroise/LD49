@@ -82,7 +82,11 @@ void atom_system_destroy(struct atom_system_o* as)
     free(as);
 }
 
-void atom_system_generate_atoms(struct atom_system_o* as, world_t world, uint32_t n)
+void atom_system_generate_atoms(
+    struct atom_system_o* as,
+    struct player_o* player,
+    world_t world,
+    uint32_t n)
 {
     assert(as);
 
@@ -111,7 +115,7 @@ void atom_system_generate_atoms(struct atom_system_o* as, world_t world, uint32_
         {
             circle_t c1 = {.center = atom->pos, .radius = atom_bounding_circle_radius};
             circle_t c2 = {.center = candidate_pos, .radius = atom_bounding_circle_radius};
-            if (circle_intersect(c1, c2))
+            if (circle_intersect(c1, c2) || player_intersect_circle(player, c2))
             {
                 valid_candidate = false;
                 break;

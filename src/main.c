@@ -264,7 +264,7 @@ static void start_game_loop(
         },
     };
 
-    atom_system_generate_atoms(atom_system, world, 5);
+    atom_system_generate_atoms(atom_system, player, world, 5);
 
     // @Todo: use SDL_GetPerformanceCounter() coupled with SDL_GetPerformanceFrequency().
     uint32_t last_time = SDL_GetTicks();
@@ -342,7 +342,7 @@ static void start_game_loop(
         {
             if (atom_system_all_stable(atom_system))
             {
-                atom_system_generate_atoms(atom_system, world, 2*win_count + 5);
+                atom_system_generate_atoms(atom_system, player, world, 2*win_count + 5);
                 win_count++;
             }
 
