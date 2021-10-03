@@ -231,6 +231,12 @@ static void start_game_loop(
 
         while (time_accumulator >= UPDATE_STEP_MS)
         {
+            if (atom_system_all_stable(atom_system))
+            {
+                printf("Win!\n");
+                atom_system_generate_atoms(atom_system, world, 5);
+            }
+
             camera_update(camera);
             player_update(player, world, UPDATE_STEP_MS);
             camera_scrolling_system_update(scroll, camera, player);

@@ -30,6 +30,7 @@ struct neutron_t
 
 struct atom_state_t
 {
+    uint32_t num_left;
     uint32_t num_exceeding_neutrons;
     uint32_t unstability_duration_ms;
 };
@@ -100,6 +101,7 @@ void atom_system_generate_atoms(struct atom_system_o* as, world_t world, uint32_
                 .y = (rand() % (upper_y - lower_y + 1)) + lower_y,
             },
             .state = {
+                .num_left = 10,
                 .num_exceeding_neutrons = 10,
                 .unstability_duration_ms = 1000,
             },
@@ -114,6 +116,21 @@ void atom_system_generate_atoms(struct atom_system_o* as, world_t world, uint32_
     }
 
     as->atoms = atoms;
+}
+
+bool atom_system_all_stable(const struct atom_system_o* as)
+{
+    uint32_t num_stable_atoms = 0;
+    const atom_t* end = as->atoms + array_size(as->atoms);
+    for (const atom_t* atom = as->atoms; atom < end; atom++)
+    {
+        if (atom->state.num_left == 0)
+        {
+            num_stable_atoms++;
+        }
+    }
+
+    return num_stable_atoms == array_size(as->atoms);
 }
 
 void atom_system_update(struct atom_system_o* as, struct player_o* player, float dt)
@@ -131,13 +148,14 @@ void atom_system_update(struct atom_system_o* as, struct player_o* player, float
     {
         atom_t* atom = &as->atoms[i];
 
-        if (array_empty(atom->neutrons) && atom->state.num_exceeding_neutrons > 0)
+        if (array_empty(atom->neutrons) && atom->state.num_left > 0)
         {
             // @Todo: emit several neutrons at a time
             // @Todo: emit in different patterns/behavior depending on the atom type.
 
             // Emit a new neutron in a random direction.
-            atom->state.num_exceeding_neutrons -= 1;
+            atom->state.num_left -= 1;
+
             vec2_t dir = vec2_normalize((vec2_t){
                     ((float)rand() / RAND_MAX - 0.5f) * 2 * 2*PI_f,
                     ((float)rand() / RAND_MAX - 0.5f) * 2 * 2*PI_f});
@@ -191,6 +209,28 @@ void atom_system_update(struct atom_system_o* as, struct player_o* player, float
     }
 }
 
+static void draw_stability_bar(atom_t atom, struct camera_o* camera, SDL_Renderer* render)
+{
+    static const float OFFSET = ATOM_SIZE;
+    static const vec2_t BAR_OUTLINE_SIZE = {ATOM_SIZE, 10};
+
+    vec2_t bar_outline_pos = vec2_add(atom.pos, (vec2_t){0, OFFSET});
+    SDL_Rect rect_outline = sdl_rect_from_pos_and_size(camera, bar_outline_pos, BAR_OUTLINE_SIZE);
+
+    float fill_percent = (float)atom.state.num_left / atom.state.num_exceeding_neutrons;
+    vec2_t bar_size = {BAR_OUTLINE_SIZE.x * (1 - fill_percent) - 2, BAR_OUTLINE_SIZE.y - 2};
+    vec2_t bar_pos = {
+        bar_outline_pos.x - BAR_OUTLINE_SIZE.x / 2 + bar_size.x / 2 + 1,
+        bar_outline_pos.y,
+    };
+    SDL_Rect rect_bar = sdl_rect_from_pos_and_size(camera, bar_pos, bar_size);
+
+    SDL_SetRenderDrawColor(render, 50, 50, 50, 255);
+    SDL_RenderDrawRect(render, &rect_outline);
+    SDL_SetRenderDrawColor(render, 50, 50, 255, 255);
+    SDL_RenderFillRect(render, &rect_bar);
+}
+
 void atom_system_draw(struct atom_system_o* as, struct camera_o* camera, struct SDL_Renderer* render)
 {
     assert(as && camera && render);
@@ -201,17 +241,26 @@ void atom_system_draw(struct atom_system_o* as, struct camera_o* camera, struct 
     {
         atom_t atom = as->atoms[i];
 
-        SDL_Rect rect = sdl_rect_from_pos_and_size_with_scale(camera, atom.pos, (vec2_t){ATOM_SIZE, ATOM_SIZE}, 1 + sinf(as->angle)*0.3);
+        if (atom.state.num_left > 0)
+        {
+            SDL_Rect rect = sdl_rect_from_pos_and_size_with_scale(camera, atom.pos, (vec2_t){ATOM_SIZE, ATOM_SIZE}, 1 + sinf(as->angle)*0.3);
+            SDL_RenderCopyEx(render, as->atom_texture, NULL, &rect, degrees(sinf(as->angle)), NULL, SDL_FLIP_NONE);
+        }
+        else
+        {
+            // @Todo: smooth transition instead of stopping directly.
+            SDL_Rect rect = sdl_rect_from_pos_and_size(camera, atom.pos, (vec2_t){ATOM_SIZE, ATOM_SIZE});
+            SDL_RenderCopy(render, as->atom_texture, NULL, &rect);
+        }
 
         /*
-        atom.state.num_exceeding_neutrons == 0
+        atom.state.num_left == 0
             ? SDL_SetRenderDrawColor(render, 255, 0, 0, 255)
             : SDL_SetRenderDrawColor(render, 0, 0, 255, 255);
 
         SDL_RenderDrawRect(render, &rect);
         SDL_SetRenderDrawColor(render, 255, 255, 255, 255);
         */
-        SDL_RenderCopyEx(render, as->atom_texture, NULL, &rect, degrees(sinf(as->angle)), NULL, SDL_FLIP_NONE);
 
         for (uint32_t j = 0; j < array_size(atom.neutrons); ++j)
         {
@@ -222,5 +271,7 @@ void atom_system_draw(struct atom_system_o* as, struct camera_o* camera, struct 
             // SDL_RenderDrawRect(render, &rect);
             SDL_RenderCopy(render, as->neutron_texture, NULL, &rect);
         }
+
+        draw_stability_bar(atom, camera, render);
     }
 }
