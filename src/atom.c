@@ -41,6 +41,7 @@ struct atom_t
     vec2_t pos;
     atom_state_t state;
     /* array */ neutron_t* neutrons;
+    void (*emit_neutron)(struct atom_t*, float);
 };
 
 // @Todo: change the API to atom_system_o, use neutrons pool and atom pool.
@@ -53,6 +54,41 @@ struct atom_system_o
     SDL_Texture* atom_texture;
     SDL_Texture* neutron_texture;
 };
+
+static void emit_neutron_random(atom_t* atom, float dt)
+{
+    vec2_t dir = vec2_normalize((vec2_t){
+            ((float)rand() / RAND_MAX - 0.5f) * 2 * 2*PI_f,
+            ((float)rand() / RAND_MAX - 0.5f) * 2 * 2*PI_f});
+
+    neutron_t neutron = {
+        .pos = atom->pos,
+        .dir = dir,
+        .speed = (((float)rand() / RAND_MAX) * 0.4f + 0.1f) * 0.05f * dt,
+        .bounding_circle_radius = NEUTRON_SIZE,
+    };
+
+    array_push(atom->neutrons, neutron);
+}
+
+static void emit_neutron_circle(atom_t* atom, float dt)
+{
+    static const uint32_t NUM_EMIT = 8;
+    const float angle_step = 2*PI_f / NUM_EMIT;
+
+    for (uint32_t i = 0; i < NUM_EMIT; ++i)
+    {
+        vec2_t dir = {cosf(angle_step*i), sinf(angle_step*i)};
+        neutron_t neutron = {
+            .pos = atom->pos,
+            .dir = dir,
+            .speed = (((float)rand() / RAND_MAX) * 0.4f + 0.1f) * 0.05f * dt,
+            .bounding_circle_radius = NEUTRON_SIZE,
+        };
+
+        array_push(atom->neutrons, neutron);
+    }
+}
 
 struct atom_system_o* atom_system_create(struct SDL_Renderer* render)
 {
@@ -131,6 +167,9 @@ void atom_system_generate_atoms(
                     .num_exceeding_neutrons = 10,
                     .unstability_duration_ms = 1000,
                 },
+                .neutrons = NULL,
+                .emit_neutron = &emit_neutron_random,
+                // .emit_neutron = &emit_neutron_circle,
             };
             array_push(atoms, atom);
             left--;
@@ -198,6 +237,8 @@ void atom_system_update(
                 atom_stable_this_update = true;
             }
 
+            atom->emit_neutron(atom, dt);
+            /*
             vec2_t dir = vec2_normalize((vec2_t){
                     ((float)rand() / RAND_MAX - 0.5f) * 2 * 2*PI_f,
                     ((float)rand() / RAND_MAX - 0.5f) * 2 * 2*PI_f});
@@ -210,6 +251,7 @@ void atom_system_update(
             };
 
             array_push(atom->neutrons, neutron);
+            */
         }
 
         // @Todo: some spatial collision detection ?
@@ -246,6 +288,8 @@ void atom_system_update(
                     array_remove_fast(atom->neutrons, j);
                 }
             }
+
+            // printf("%d %d\n", array_size(atom->neutrons), atom->state.num_left);
         }
     }
 

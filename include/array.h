@@ -101,10 +101,10 @@
         (B)[(I)]
     #define array_remove_fast(B, I)                                         \
         assert((uint32_t)(I) < array_size(B) && "Array out of bounds.");  \
-          (B)[I] = (B)[_array_header(B)->_size - 1]
+          (B)[I] = (B)[_array_header(B)->_size--]
 #else
     #define array_at(B, I) ((B)[(I)])
-    #define array_remove_fast(B, I) ((B) ? (B)[(I)] = (B)[_array_header(B)->_size - 1] : 0)
+    #define array_remove_fast(B, I) ((B) ? (B)[(I)] = (B)[_array_header(B)->_size--] : 0)
 #endif
 
 // -----------------------------------------------------------------------------
