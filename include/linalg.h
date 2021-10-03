@@ -19,6 +19,7 @@ static inline float radians(float deg) { return deg * PI_f / 180.0f; }
 static inline float max(float a, float b) { return a > b ? a : b; }
 static inline float min(float a, float b) { return a < b ? a : b; }
 static inline float clamp(float x, float min, float max) { return x < min ? min : x > max ? max : x; }
+static inline float sign(float x) { return x >= 0 ? 1 : -1; }
 
 // Polynomial easing of the form f(x) = x^power with x in [0, 1] and power >= 0.
 // A power of 0 interpolates linearly.

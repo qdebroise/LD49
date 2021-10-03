@@ -142,6 +142,8 @@ void atom_system_update(struct atom_system_o* as, struct player_o* player, float
             array_push(atom->neutrons, neutron);
         }
 
+        // @Todo: some spatial collision detection ?
+
         for (uint32_t j = 0; j < array_size(atom->neutrons); ++j)
         {
             neutron_t* neutron = &atom->neutrons[j];
@@ -180,6 +182,8 @@ void atom_system_update(struct atom_system_o* as, struct player_o* player, float
 void atom_system_draw(struct atom_system_o* as, struct camera_o* camera, struct SDL_Renderer* render)
 {
     assert(as && camera && render);
+
+    // @Todo: culling
 
     for (uint32_t i = 0; i < array_size(as->atoms); ++i)
     {

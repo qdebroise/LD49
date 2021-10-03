@@ -41,6 +41,10 @@ void camera_scrolling_system_update(
 
     float speed = DISTANCE_PERCENT * vec2_dist(player_pos, camera_pos);
 
+    // @Todo: this is a bit of a hack.
+    // Avoid low float precision creating shaky visuals.
+    if (speed < 0.1) { speed = 0; }
+
     scroll->dir = vec2_normalize(vec2_sub(player_pos, camera_pos));
     camera_pos = vec2_add(camera_pos, vec2_mul_scalar(scroll->dir, speed));
     camera_look_at(camera, camera_pos);

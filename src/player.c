@@ -60,7 +60,12 @@ void player_update(struct player_o* player, float dt)
         player->speed *= SLOWDOWN_FACTOR;
     }
 
-    player->speed = DISTANCE_PERCENT * vec2_dist(player->pos, player->target);
+    vec2_t to_target = vec2_sub(player->target, player->pos);
+    if (!(to_target.x < 1e-5 && to_target.y < 1e-5)) // @Todo: this is a bit hacky.
+    {
+        player->dir = vec2_normalize(to_target);
+    }
+    player->speed = DISTANCE_PERCENT * vec2_length(to_target);
     player->pos = vec2_add(player->pos, vec2_mul_scalar(player->dir, player->speed * dt));
 }
 
