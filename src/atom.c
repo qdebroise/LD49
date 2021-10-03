@@ -51,6 +51,8 @@ struct atom_system_o
     float angle;
     float angle_increment;
 
+    float start_time;
+
     SDL_Texture* atom_texture;
     SDL_Texture* neutron_texture;
 };
@@ -99,6 +101,7 @@ struct atom_system_o* atom_system_create(struct SDL_Renderer* render)
     system->neutron_texture = load_bmp_to_texture(render, "assets/images/neutron.bmp");
     system->angle = 0;
     system->angle_increment = 0.0005;
+    system->start_time = SDL_GetTicks();
 
     return system;
 }
@@ -125,6 +128,8 @@ void atom_system_generate_atoms(
     uint32_t n)
 {
     assert(as);
+
+    as->start_time = SDL_GetTicks();
 
     const int32_t lower_x = world.bounds.west;
     const int32_t upper_x = world.bounds.east;
@@ -207,6 +212,13 @@ void atom_system_update(
     float dt)
 {
     assert(as && player);
+
+    uint32_t now_ms = SDL_GetTicks();
+    uint32_t elapsed_ms = now_ms - as->start_time;
+    if (elapsed_ms < 2000) // 2 sec preparation before shooting starts.
+    {
+        return;
+    }
 
     // @Todo: smooth things out.
     as->angle += as->angle_increment * dt;
