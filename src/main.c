@@ -139,6 +139,7 @@ static void start_game_loop(
     static const uint32_t UPDATE_STEP_MS = 1000 / 60;
 
     SDL_Renderer* render = display_get_renderer(display);
+    SDL_Texture* background = load_bmp_to_texture(render, "assets/images/background.bmp");
 
     struct camera_o* camera = camera_create((vec2_t){0, 0}, (vec2_t){DISPLAY_WIDTH, DISPLAY_HEIGHT});
     struct player_o* player = player_create(render);
@@ -245,8 +246,10 @@ static void start_game_loop(
         // Render
         //
 
-        SDL_SetRenderDrawColor(render, 104, 159, 56, 255);
+        SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
         SDL_RenderClear(render);
+
+        SDL_RenderCopy(render, background, NULL, NULL);
 
         player_draw(player, camera, render);
         atom_system_draw(atom_system, camera, render);
@@ -256,6 +259,8 @@ static void start_game_loop(
     }
 
     // Cleanup
+
+    SDL_DestroyTexture(background);
 
     atom_system_destroy(atom_system);
     player_destroy(player);

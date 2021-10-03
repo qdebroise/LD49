@@ -250,7 +250,7 @@ static void draw_stability_bar(atom_t atom, struct camera_o* camera, SDL_Rendere
     };
     SDL_Rect rect_bar = sdl_rect_from_pos_and_size(camera, bar_pos, bar_size);
 
-    SDL_SetRenderDrawColor(render, 50, 50, 50, 255);
+    SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
     SDL_RenderDrawRect(render, &rect_outline);
     SDL_SetRenderDrawColor(render, 50, 50, 255, 255);
     SDL_RenderFillRect(render, &rect_bar);
