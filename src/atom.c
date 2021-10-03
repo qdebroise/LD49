@@ -1,5 +1,6 @@
 #include "atom.h"
 
+#include "audio.h"
 #include "array.h"
 #include "camera.h"
 #include "linalg.h"
@@ -133,7 +134,12 @@ bool atom_system_all_stable(const struct atom_system_o* as)
     return num_stable_atoms == array_size(as->atoms);
 }
 
-void atom_system_update(struct atom_system_o* as, struct player_o* player, float dt)
+void atom_system_update(
+    struct atom_system_o* as,
+    struct audio_system_o* audio,
+    struct player_o* player,
+    world_t world,
+    float dt)
 {
     assert(as && player);
 
@@ -144,17 +150,27 @@ void atom_system_update(struct atom_system_o* as, struct player_o* player, float
         as->angle_increment = -as->angle_increment;
     }
 
+    bool neutron_emitted_this_update = false;
+    bool atom_stable_this_update = false;
+
     for (uint32_t i = 0; i < array_size(as->atoms); ++i)
     {
         atom_t* atom = &as->atoms[i];
 
         if (array_empty(atom->neutrons) && atom->state.num_left > 0)
         {
+            // Emit a new neutron in a random direction.
+
             // @Todo: emit several neutrons at a time
             // @Todo: emit in different patterns/behavior depending on the atom type.
 
-            // Emit a new neutron in a random direction.
             atom->state.num_left -= 1;
+
+            neutron_emitted_this_update = true;
+            if (atom->state.num_left == 0)
+            {
+                atom_stable_this_update = true;
+            }
 
             vec2_t dir = vec2_normalize((vec2_t){
                     ((float)rand() / RAND_MAX - 0.5f) * 2 * 2*PI_f,
@@ -187,8 +203,8 @@ void atom_system_update(struct atom_system_o* as, struct player_o* player, float
                 // @Todo: player hit
                 delete_neutron = true;
             }
-            // @Todo: this is only temporary. Need proper boundary checking.
-            else if (fabs(neutron->pos.x) > 2000 || fabs(neutron->pos.y) > 1000)
+            else if (neutron->pos.x >= world.bounds.east || neutron->pos.x <= world.bounds.west
+                || neutron->pos.y >= world.bounds.north || neutron->pos.y <= world.bounds.south)
             {
                 delete_neutron = true;
             }
@@ -206,6 +222,15 @@ void atom_system_update(struct atom_system_o* as, struct player_o* player, float
                 }
             }
         }
+    }
+
+    if (neutron_emitted_this_update)
+    {
+        audio_system_play_sound(audio, AUDIO_ENTRY_EMIT_NEUTRON);
+    }
+    if (atom_stable_this_update)
+    {
+        audio_system_play_sound(audio, AUDIO_ENTRY_ATOM_STABLE);
     }
 }
 

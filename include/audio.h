@@ -10,16 +10,15 @@ struct audio_system_o;
 // things quicker for me as it avoids creating an id to sound mapping.
 enum AudioEntry
 {
-    AUDIO_ENTRY_LASER = 0,
-    AUDIO_ENTRY_MUSIC,
-    AUDIO_ENTRY_EXPLOSION,
+    AUDIO_ENTRY_EMIT_NEUTRON = 0,
+    AUDIO_ENTRY_ATOM_STABLE,
 
     _AUDIO_ENTRY_COUNT, // This *MUST* appear last in the enum.
 };
 
 struct audio_system_o* audio_system_create(void);
 void audio_system_destroy(struct audio_system_o*);
-void audio_play_sound(const struct audio_system_o*, enum AudioEntry);
+void audio_system_play_sound(const struct audio_system_o*, enum AudioEntry);
 
 #endif // AUDIO_H_
 

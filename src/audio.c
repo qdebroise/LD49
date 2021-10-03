@@ -8,9 +8,8 @@
 #include <stdlib.h>
 
 static const char* audio_files[_AUDIO_ENTRY_COUNT] = {
-    "assets/sfx/laser.wav",
-    "assets/sfx/music.wav",
-    "assets/sfx/explosion.wav",
+    "assets/sfx/emit_neutron.wav",
+    "assets/sfx/atom_stable.wav",
 };
 
 typedef struct audio_sample_t audio_sample_t;
@@ -70,7 +69,7 @@ void audio_system_destroy(struct audio_system_o* audio)
     free(audio);
 }
 
-void audio_play_sound(const struct audio_system_o* audio, enum AudioEntry entry)
+void audio_system_play_sound(const struct audio_system_o* audio, enum AudioEntry entry)
 {
     assert(audio);
     assert((uint32_t)entry >= 0 && (uint32_t)entry < _AUDIO_ENTRY_COUNT);

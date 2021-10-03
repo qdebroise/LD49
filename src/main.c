@@ -184,15 +184,6 @@ static void start_game_loop(
                     case SDLK_ESCAPE:
                         game_ctx->state = GAME_STATE_QUIT;
                         return;
-                    case SDLK_UP:
-                        audio_play_sound(audio_system, AUDIO_ENTRY_LASER);
-                        break;
-                    case SDLK_DOWN:
-                        audio_play_sound(audio_system, AUDIO_ENTRY_MUSIC);
-                        break;
-                    case SDLK_RIGHT:
-                        audio_play_sound(audio_system, AUDIO_ENTRY_EXPLOSION);
-                        break;
                     default: break;
                 }
             }
@@ -240,7 +231,7 @@ static void start_game_loop(
             camera_update(camera);
             player_update(player, world, UPDATE_STEP_MS);
             camera_scrolling_system_update(scroll, camera, player);
-            atom_system_update(atom_system, player, UPDATE_STEP_MS);
+            atom_system_update(atom_system, audio_system, player, world, UPDATE_STEP_MS);
 
             time_accumulator -= UPDATE_STEP_MS;
             update_frames += 1;
