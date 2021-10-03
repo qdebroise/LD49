@@ -149,10 +149,10 @@ static void start_game_loop(
     // World of 1000x1000.
     world_t world = {
         .bounds = {
-            .north = 500,
-            .south = -500,
-            .east = 500,
-            .west = -500,
+            .north = 600,
+            .south = -600,
+            .east = 800,
+            .west = -800,
         },
     };
 
@@ -249,7 +249,10 @@ static void start_game_loop(
         SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
         SDL_RenderClear(render);
 
+        SDL_Rect background_rect = sdl_rect_from_pos_and_size(camera, (vec2_t){0, 0}, (vec2_t){world.bounds.east, world.bounds.north});
         SDL_RenderCopy(render, background, NULL, NULL);
+        SDL_SetRenderDrawColor(render, 81, 64, 32, 255);
+        SDL_RenderDrawRect(render, &background_rect);
 
         player_draw(player, camera, render);
         atom_system_draw(atom_system, camera, render);
