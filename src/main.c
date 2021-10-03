@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+static const char* GAME_TITLE = "LD49 - Schrodinger's cat";
 static const uint32_t DISPLAY_WIDTH = 1280;
 static const uint32_t DISPLAY_HEIGHT = 720;
 
@@ -146,7 +147,6 @@ static void start_game_loop(
     struct atom_system_o* atom_system = atom_system_create(render);
     struct camera_scrolling_system_o* scroll = camera_scrolling_system_create();
 
-    // World of 1000x1000.
     world_t world = {
         .bounds = {
             .north = 600,
@@ -165,7 +165,10 @@ static void start_game_loop(
     uint32_t render_frames = 0;
     uint32_t timer_ms = SDL_GetTicks();
 
-    while (1)
+    uint32_t win_count = 0;
+
+    bool running = true;
+    while (running)
     {
         //
         // Events
@@ -180,7 +183,8 @@ static void start_game_loop(
             if (event.type == SDL_QUIT)
             {
                 game_ctx->state = GAME_STATE_QUIT;
-                return;
+                running = false;
+                break;
             }
             else if (event.type == SDL_KEYDOWN)
             {
@@ -188,7 +192,8 @@ static void start_game_loop(
                 {
                     case SDLK_ESCAPE:
                         game_ctx->state = GAME_STATE_QUIT;
-                        return;
+                        running = false;
+                        break;
                     default: break;
                 }
             }
@@ -229,8 +234,15 @@ static void start_game_loop(
         {
             if (atom_system_all_stable(atom_system))
             {
+                atom_system_generate_atoms(atom_system, world, 2*win_count + 5);
+                win_count++;
+            }
+
+            if (win_count == 3)
+            {
                 printf("Win!\n");
-                atom_system_generate_atoms(atom_system, world, 5);
+                game_ctx->state = GAME_STATE_CREDIT;
+                running = false;
             }
 
             camera_update(camera);
@@ -280,7 +292,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    struct display_o* display = display_create(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    struct display_o* display = display_create(DISPLAY_WIDTH, DISPLAY_HEIGHT, GAME_TITLE);
     struct audio_system_o* audio_system = audio_system_create();
 
     // Init + main loop
@@ -293,6 +305,11 @@ int main(int argc, char* argv[])
     if (game_ctx.state == GAME_STATE_PLAYING)
     {
         start_game_loop(display, audio_system, &game_ctx);
+    }
+
+    if (game_ctx.state == GAME_STATE_CREDIT)
+    {
+        start_credit_loop(display, &game_ctx);
     }
 
     audio_system_destroy(audio_system);

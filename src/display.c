@@ -15,7 +15,7 @@ struct display_o
     uint32_t logical_height;
 };
 
-struct display_o* display_create(uint32_t width, uint32_t height)
+struct display_o* display_create(uint32_t width, uint32_t height, const char* title)
 {
     // @Note @Todo: see later about custom allocators.
     struct display_o* display = malloc(sizeof(struct display_o));
@@ -23,7 +23,7 @@ struct display_o* display_create(uint32_t width, uint32_t height)
     display->logical_height = height,
 
     display->window = SDL_CreateWindow(
-        "Test",
+        title,
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         width, height,
         SDL_WINDOW_RESIZABLE);

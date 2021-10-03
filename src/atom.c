@@ -92,28 +92,50 @@ void atom_system_generate_atoms(struct atom_system_o* as, world_t world, uint32_
     const int32_t upper_y = world.bounds.north;
     atom_t* atoms = NULL; // array.
 
-    for (uint32_t i = 0; i < n; ++i)
-    {
+    const float atom_bounding_circle_radius = sqrtf(2*ATOM_SIZE*ATOM_SIZE);
 
-        // @Todo: better pseudo-random generator.
-        atom_t atom = {
-            .pos = {
-                .x = (rand() % (upper_x - lower_x + 1)) + lower_x,
-                .y = (rand() % (upper_y - lower_y + 1)) + lower_y,
-            },
-            .state = {
-                .num_left = 10,
-                .num_exceeding_neutrons = 10,
-                .unstability_duration_ms = 1000,
-            },
+    // @Todo: this is using brute force to place atoms. Do something better! Place them using
+    // poisson-disc sampling or some spatial partionning.
+    uint32_t left = n;
+    while (left)
+    {
+        vec2_t candidate_pos = {
+            .x = (rand() % (upper_x - lower_x + 1)) + lower_x,
+            .y = (rand() % (upper_y - lower_y + 1)) + lower_y,
         };
-        array_push(atoms, atom);
+
+        bool valid_candidate = true;
+
+        const atom_t* end = atoms + array_size(atoms);
+        for (const atom_t* atom = atoms; atom < end; atom++)
+        {
+            circle_t c1 = {.center = atom->pos, .radius = atom_bounding_circle_radius};
+            circle_t c2 = {.center = candidate_pos, .radius = atom_bounding_circle_radius};
+            if (circle_intersect(c1, c2))
+            {
+                valid_candidate = false;
+                break;
+            }
+        }
+
+        if (valid_candidate)
+        {
+            atom_t atom = {
+                .pos = candidate_pos,
+                .state = {
+                    .num_left = 10,
+                    .num_exceeding_neutrons = 10,
+                    .unstability_duration_ms = 1000,
+                },
+            };
+            array_push(atoms, atom);
+            left--;
+        }
     }
 
     if (as->atoms)
     {
         array_free(as->atoms);
-        as->atoms = NULL;
     }
 
     as->atoms = atoms;
@@ -179,11 +201,9 @@ void atom_system_update(
             neutron_t neutron = {
                 .pos = atom->pos,
                 .dir = dir,
-                .speed = ((float)rand() / RAND_MAX) * 0.5f,
+                .speed = (((float)rand() / RAND_MAX) * 0.4f + 0.1f) * 0.05f * dt,
                 .bounding_circle_radius = NEUTRON_SIZE,
             };
-
-            // printf("Emitting neutron: %f %f %f %f %f\n", neutron.pos.x, neutron.pos.y, neutron.dir.x, neutron.dir.y, neutron.speed);
 
             array_push(atom->neutrons, neutron);
         }
