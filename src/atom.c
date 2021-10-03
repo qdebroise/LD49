@@ -13,7 +13,7 @@
 
 // @Todo: move this somewhere else.
 static const uint32_t ATOM_SIZE = 100;
-static const uint32_t NEUTRON_SIZE = 10;
+static const uint32_t NEUTRON_SIZE = 8;
 
 typedef struct atom_t atom_t;
 typedef struct atom_state_t atom_state_t;
@@ -45,6 +45,8 @@ struct atom_t
 struct atom_system_o
 {
     atom_t* atoms;
+    float angle;
+    float angle_increment;
 
     SDL_Texture* atom_texture;
     SDL_Texture* neutron_texture;
@@ -57,6 +59,8 @@ struct atom_system_o* atom_system_create(struct SDL_Renderer* render)
     system->atoms = NULL;
     system->atom_texture = load_bmp_to_texture(render, "assets/images/atom.bmp");
     system->neutron_texture = load_bmp_to_texture(render, "assets/images/neutron.bmp");
+    system->angle = 0;
+    system->angle_increment = 0.0005;
 
     return system;
 }
@@ -115,6 +119,13 @@ void atom_system_generate_atoms(struct atom_system_o* as, world_t world, uint32_
 void atom_system_update(struct atom_system_o* as, struct player_o* player, float dt)
 {
     assert(as && player);
+
+    // @Todo: smooth things out.
+    as->angle += as->angle_increment * dt;
+    if (as->angle >= PI_4_f/2 || as->angle <= - PI_4_f/2)
+    {
+        as->angle_increment = -as->angle_increment;
+    }
 
     for (uint32_t i = 0; i < array_size(as->atoms); ++i)
     {
@@ -190,7 +201,7 @@ void atom_system_draw(struct atom_system_o* as, struct camera_o* camera, struct 
     {
         atom_t atom = as->atoms[i];
 
-        SDL_Rect rect = sdl_rect_from_pos_and_size(camera, atom.pos, (vec2_t){ATOM_SIZE, ATOM_SIZE});
+        SDL_Rect rect = sdl_rect_from_pos_and_size_with_scale(camera, atom.pos, (vec2_t){ATOM_SIZE, ATOM_SIZE}, 1 + sinf(as->angle)*0.3);
 
         /*
         atom.state.num_exceeding_neutrons == 0
@@ -200,7 +211,7 @@ void atom_system_draw(struct atom_system_o* as, struct camera_o* camera, struct 
         SDL_RenderDrawRect(render, &rect);
         SDL_SetRenderDrawColor(render, 255, 255, 255, 255);
         */
-        SDL_RenderCopy(render, as->atom_texture, NULL, &rect);
+        SDL_RenderCopyEx(render, as->atom_texture, NULL, &rect, degrees(sinf(as->angle)), NULL, SDL_FLIP_NONE);
 
         for (uint32_t j = 0; j < array_size(atom.neutrons); ++j)
         {

@@ -40,3 +40,31 @@ SDL_Rect sdl_rect_from_pos_and_size(struct camera_o* camera, vec2_t pos, vec2_t 
     // SDL_RenderFillRect needs top-left corner and not bottom-left hence the `- height`.
     return (SDL_Rect){screen_bl.x, screen_bl.y - height, width, height};
 }
+
+SDL_Rect sdl_rect_from_pos_and_size_with_scale(
+    struct camera_o* camera,
+    vec2_t pos,
+    vec2_t size,
+    float scale)
+{
+    mat3_t transform = {
+        .x = {scale,     0, 0},
+        .y = {    0, scale, 0},
+        .z = {pos.x, pos.y, 1},
+    };
+
+    vec3_t bl = {-size.x, -size.y, 1};
+    vec3_t tr = {+size.x, +size.y, 1};
+
+    bl = mat3_mul_vec(transform, bl);
+    tr = mat3_mul_vec(transform, tr);
+
+    vec2_t screen_bl = camera_world_to_screen(camera, vec3_xy(bl));
+    vec2_t screen_tr = camera_world_to_screen(camera, vec3_xy(tr));
+
+    float width = fabs(screen_tr.x - screen_bl.x);
+    float height = fabs(screen_tr.y - screen_bl.y);
+
+    // SDL_RenderFillRect needs top-left corner and not bottom-left hence the `- height`.
+    return (SDL_Rect){screen_bl.x, screen_bl.y - height, width, height};
+}

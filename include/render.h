@@ -15,6 +15,7 @@ struct SDL_Texture* load_bmp_to_texture(struct SDL_Renderer*, const char* file);
 // Take the min/max from the bounding box in world space and convert them to screen space.
 // Then compute the SDL_Rect used for drawing the box.
 SDL_Rect sdl_rect_from_pos_and_size(struct camera_o*, vec2_t pos, vec2_t size);
+SDL_Rect sdl_rect_from_pos_and_size_with_scale(struct camera_o*, vec2_t pos, vec2_t size, float scale);
 
 #endif // RENDER_H_
 

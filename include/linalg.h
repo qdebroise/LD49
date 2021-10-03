@@ -33,12 +33,22 @@ static inline float polynomial_ease_inout(float x, float power) { return x < 0.5
 //
 
 typedef struct vec2_t vec2_t;
+typedef struct vec3_t vec3_t;
 
 struct vec2_t
 {
     float x;
     float y;
 };
+
+struct vec3_t
+{
+    float x;
+    float y;
+    float z;
+};
+
+static inline vec2_t vec3_xy(vec3_t v) { return (vec2_t){v.x, v.y}; }
 
 static inline vec2_t vec2_add(vec2_t lhs, vec2_t rhs) { return (vec2_t){lhs.x + rhs.x, lhs.y + rhs.y}; }
 static inline vec2_t vec2_sub(vec2_t lhs, vec2_t rhs) { return (vec2_t){lhs.x - rhs.x, lhs.y - rhs.y}; }
@@ -71,14 +81,6 @@ static inline vec2_t vec2_rotate(vec2_t v, float angle)
 //
 
 typedef struct mat3_t mat3_t;
-typedef struct vec3_t vec3_t;
-
-struct vec3_t
-{
-    float x;
-    float y;
-    float z;
-};
 
 struct mat3_t
 {
