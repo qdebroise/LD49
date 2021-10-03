@@ -6,6 +6,7 @@
 #include "display.h"
 #include "linalg.h"
 #include "player.h"
+#include "render.h"
 #include "world.h"
 
 #include <SDL2/SDL.h>
@@ -48,12 +49,14 @@ static inline SDL_Rect bbox2_to_sdl_rect(bbox2_t bbox)
 static void start_titlescreen_loop(struct display_o* display, game_t* game_ctx)
 {
     SDL_Renderer* render = display_get_renderer(display);
+    SDL_Texture* play_texture = load_bmp_to_texture(render, "assets/images/play_button.bmp");
+    SDL_Texture* quit_texture = load_bmp_to_texture(render, "assets/images/quit_button.bmp");
 
     vec2_t center = {DISPLAY_WIDTH / 2.0f, DISPLAY_HEIGHT / 2.0f};
     vec2_t button_size = {400, 100};
 
-    float play_vertical_offset = 10;
-    float quit_vertical_offset = 200;
+    float play_vertical_offset = 100;
+    float quit_vertical_offset = 250;
 
     bbox2_t play_bbox = {
         {center.x - button_size.x/2, center.y - button_size.y/2 + play_vertical_offset},
@@ -113,15 +116,16 @@ static void start_titlescreen_loop(struct display_o* display, game_t* game_ctx)
         SDL_Rect play_rect = bbox2_to_sdl_rect(play_bbox);
         SDL_Rect quit_rect = bbox2_to_sdl_rect(quit_bbox);
 
-        SDL_SetRenderDrawColor(render, 0, 255, 0, 255);
-        SDL_RenderFillRect(render, &play_rect);
-        SDL_SetRenderDrawColor(render, 255, 0, 0, 255);
-        SDL_RenderFillRect(render, &quit_rect);
+        SDL_RenderCopy(render, play_texture, NULL, &play_rect);
+        SDL_RenderCopy(render, quit_texture, NULL, &quit_rect);
 
         SDL_RenderPresent(render);
 
         SDL_Delay(100); // Static menu so we can delay quit a lot.
     }
+
+    SDL_DestroyTexture(play_texture);
+    SDL_DestroyTexture(quit_texture);
 }
 
 static void start_game_loop(
