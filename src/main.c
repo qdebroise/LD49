@@ -358,6 +358,13 @@ static void start_game_loop(
             camera_scrolling_system_update(scroll, camera, player);
             atom_system_update(atom_system, audio_system, player, world, UPDATE_STEP_MS);
 
+            if (player_is_dead(player))
+            {
+                printf("Dead!\n");
+                game_ctx->state = GAME_STATE_TITLESCREEN;
+                running = false;
+            }
+
             time_accumulator -= UPDATE_STEP_MS;
             update_frames += 1;
         }

@@ -24,6 +24,8 @@ struct player_o
     bool move;
     float speed;
 
+    bool is_dead;
+
     SDL_Texture* texture;
 };
 
@@ -33,6 +35,7 @@ player_o* player_create(struct SDL_Renderer* render)
     player_o* player = malloc(sizeof(struct player_o));
     player->pos = (vec2_t){0, 0};
     player->bounding_circle_radius = PLAYER_SIZE.x;
+    player->is_dead = false;
     player->texture = load_bmp_to_texture(render, "assets/images/cat.bmp");
 
     assert(player->texture);
@@ -128,3 +131,16 @@ vec2_t player_position(const struct player_o* player)
     assert(player);
     return player->pos;
 }
+
+void player_die(struct player_o* player)
+{
+    assert(player);
+    player->is_dead = true;
+}
+
+bool player_is_dead(const struct player_o* player)
+{
+    assert(player);
+    return player->is_dead;
+}
+

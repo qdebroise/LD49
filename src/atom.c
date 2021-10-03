@@ -221,6 +221,7 @@ void atom_system_update(
                     player, (circle_t){neutron->pos, neutron->bounding_circle_radius}))
             {
                 // @Todo: player hit
+                player_die(player);
                 delete_neutron = true;
             }
             else if (neutron->pos.x >= world.bounds.east || neutron->pos.x <= world.bounds.west

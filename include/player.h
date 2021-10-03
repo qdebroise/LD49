@@ -17,6 +17,8 @@ void player_handle_event(struct player_o*, struct camera_o*, SDL_Event event);
 void player_draw(struct player_o*, struct camera_o*, struct SDL_Renderer*);
 vec2_t player_position(const struct player_o*);
 bool player_intersect_circle(struct player_o*, circle_t);
+void player_die(struct player_o*);
+bool player_is_dead(const struct player_o*);
 
 #endif // PLAYER_H_
 
