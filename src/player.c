@@ -97,7 +97,7 @@ void player_handle_event(struct player_o* player, struct camera_o* camera, SDL_E
     }
     else if (event.type == SDL_MOUSEBUTTONUP)
     {
-        // player->move = false;
+        player->move = false;
     }
     else if (event.type == SDL_MOUSEMOTION && player->move)
     {

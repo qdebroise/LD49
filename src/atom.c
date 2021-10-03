@@ -81,6 +81,7 @@ static void emit_neutron_circle(atom_t* atom, float dt)
     for (uint32_t i = 0; i < NUM_EMIT; ++i)
     {
         vec2_t dir = {cosf(angle_step*i), sinf(angle_step*i)};
+
         neutron_t neutron = {
             .pos = atom->pos,
             .dir = dir,
@@ -173,8 +174,7 @@ void atom_system_generate_atoms(
                     .unstability_duration_ms = 1000,
                 },
                 .neutrons = NULL,
-                .emit_neutron = &emit_neutron_random,
-                // .emit_neutron = &emit_neutron_circle,
+                .emit_neutron = rand() % 2 ? &emit_neutron_random : &emit_neutron_circle,
             };
             array_push(atoms, atom);
             left--;
@@ -250,20 +250,6 @@ void atom_system_update(
             }
 
             atom->emit_neutron(atom, dt);
-            /*
-            vec2_t dir = vec2_normalize((vec2_t){
-                    ((float)rand() / RAND_MAX - 0.5f) * 2 * 2*PI_f,
-                    ((float)rand() / RAND_MAX - 0.5f) * 2 * 2*PI_f});
-
-            neutron_t neutron = {
-                .pos = atom->pos,
-                .dir = dir,
-                .speed = (((float)rand() / RAND_MAX) * 0.4f + 0.1f) * 0.05f * dt,
-                .bounding_circle_radius = NEUTRON_SIZE,
-            };
-
-            array_push(atom->neutrons, neutron);
-            */
         }
 
         // @Todo: some spatial collision detection ?
@@ -297,7 +283,9 @@ void atom_system_update(
                 }
                 else
                 {
-                    array_remove_fast(atom->neutrons, j);
+                    atom->neutrons[j] = atom->neutrons[array_size(atom->neutrons) - 1];
+                    array_pop(atom->neutrons);
+                    // array_remove_fast(atom->neutrons, j);
                 }
             }
 
