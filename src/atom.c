@@ -274,7 +274,7 @@ void atom_system_draw(struct atom_system_o* as, struct camera_o* camera, struct 
         else
         {
             // @Todo: smooth transition instead of stopping directly.
-            SDL_Rect rect = sdl_rect_from_pos_and_size(camera, atom.pos, (vec2_t){ATOM_SIZE, ATOM_SIZE});
+            SDL_Rect rect = sdl_rect_from_pos_and_size_with_scale(camera, atom.pos, (vec2_t){ATOM_SIZE, ATOM_SIZE}, 0.5);
             SDL_RenderCopy(render, as->atom_texture, NULL, &rect);
         }
 
@@ -297,6 +297,9 @@ void atom_system_draw(struct atom_system_o* as, struct camera_o* camera, struct 
             SDL_RenderCopy(render, as->neutron_texture, NULL, &rect);
         }
 
-        draw_stability_bar(atom, camera, render);
+        if (atom.state.num_left > 0)
+        {
+            draw_stability_bar(atom, camera, render);
+        }
     }
 }
