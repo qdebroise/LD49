@@ -32,7 +32,7 @@ void camera_scrolling_system_update(
 {
     assert(scroll && camera && player);
 
-    static const float DISTANCE_PERCENT = 0.015f;
+    static const float DISTANCE_PERCENT = 0.02f;
 
     vec2_t player_pos = player_position(player);
     vec2_t camera_pos = camera_position(camera);

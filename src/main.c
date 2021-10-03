@@ -6,6 +6,7 @@
 #include "display.h"
 #include "linalg.h"
 #include "player.h"
+#include "world.h"
 
 #include <SDL2/SDL.h>
 
@@ -130,6 +131,9 @@ static void start_game_loop(
 {
     assert(game_ctx->state == GAME_STATE_PLAYING);
 
+    // Run the update loop at a fixed timestep at about 60 UPS (Update Per Second).
+    static const uint32_t UPDATE_STEP_MS = 1000 / 60;
+
     SDL_Renderer* render = display_get_renderer(display);
 
     struct camera_o* camera = camera_create((vec2_t){0, 0}, (vec2_t){DISPLAY_WIDTH, DISPLAY_HEIGHT});
@@ -137,15 +141,24 @@ static void start_game_loop(
     struct atom_system_o* atom_system = atom_system_create(render);
     struct camera_scrolling_system_o* scroll = camera_scrolling_system_create();
 
+    // World of 1000x1000.
+    world_t world = {
+        .bounds = {
+            .north = 500,
+            .south = -500,
+            .east = 500,
+            .west = -500,
+        },
+    };
+
+    atom_system_generate_atoms(atom_system, world, 5);
+
     // @Todo: use SDL_GetPerformanceCounter() coupled with SDL_GetPerformanceFrequency().
     uint32_t last_time = SDL_GetTicks();
     uint32_t time_accumulator = 0;
     uint32_t update_frames = 0;
     uint32_t render_frames = 0;
     uint32_t timer_ms = SDL_GetTicks();
-
-    // Run the update loop at a fixed timestep at about 60 UPS (Update Per Second).
-    static const uint32_t UPDATE_STEP_MS = 1000 / 60;
 
     while (1)
     {
@@ -219,7 +232,7 @@ static void start_game_loop(
         while (time_accumulator >= UPDATE_STEP_MS)
         {
             camera_update(camera);
-            player_update(player, UPDATE_STEP_MS);
+            player_update(player, world, UPDATE_STEP_MS);
             camera_scrolling_system_update(scroll, camera, player);
             atom_system_update(atom_system, player, UPDATE_STEP_MS);
 

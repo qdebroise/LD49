@@ -12,7 +12,7 @@
 #include <stdlib.h>
 
 // @Todo: move this somewhere else.
-static const uint32_t ATOM_SIZE = 50;
+static const uint32_t ATOM_SIZE = 100;
 static const uint32_t NEUTRON_SIZE = 10;
 
 typedef struct atom_t atom_t;
@@ -46,7 +46,8 @@ struct atom_system_o
 {
     atom_t* atoms;
 
-    SDL_Texture* texture;
+    SDL_Texture* atom_texture;
+    SDL_Texture* neutron_texture;
 };
 
 struct atom_system_o* atom_system_create(struct SDL_Renderer* render)
@@ -54,10 +55,8 @@ struct atom_system_o* atom_system_create(struct SDL_Renderer* render)
     // @Note @Todo: see later about custom allocators.
     struct atom_system_o* system = malloc(sizeof(struct atom_system_o));
     system->atoms = NULL;
-    system->texture = load_bmp_to_texture(render, "assets/images/atom.bmp");
-    atom_system_generate_atoms(system, 5);
-
-    assert(system->texture);
+    system->atom_texture = load_bmp_to_texture(render, "assets/images/atom.bmp");
+    system->neutron_texture = load_bmp_to_texture(render, "assets/images/neutron.bmp");
 
     return system;
 }
@@ -72,17 +71,19 @@ void atom_system_destroy(struct atom_system_o* as)
     }
     array_free(as->atoms);
 
+    SDL_DestroyTexture(as->atom_texture);
+    SDL_DestroyTexture(as->neutron_texture);
     free(as);
 }
 
-void atom_system_generate_atoms(struct atom_system_o* as, uint32_t n)
+void atom_system_generate_atoms(struct atom_system_o* as, world_t world, uint32_t n)
 {
     assert(as);
 
-    const int32_t lower_x = -1280 / 2;
-    const int32_t upper_x = 1280 / 2;
-    const int32_t lower_y = -720 / 2;
-    const int32_t upper_y = 720 / 2;
+    const int32_t lower_x = world.bounds.west;
+    const int32_t upper_x = world.bounds.east;
+    const int32_t lower_y = world.bounds.south;
+    const int32_t upper_y = world.bounds.north;
     atom_t* atoms = NULL; // array.
 
     for (uint32_t i = 0; i < n; ++i)
@@ -191,21 +192,24 @@ void atom_system_draw(struct atom_system_o* as, struct camera_o* camera, struct 
 
         SDL_Rect rect = sdl_rect_from_pos_and_size(camera, atom.pos, (vec2_t){ATOM_SIZE, ATOM_SIZE});
 
+        /*
         atom.state.num_exceeding_neutrons == 0
             ? SDL_SetRenderDrawColor(render, 255, 0, 0, 255)
             : SDL_SetRenderDrawColor(render, 0, 0, 255, 255);
 
         SDL_RenderDrawRect(render, &rect);
-        SDL_RenderCopy(render, as->texture, NULL, &rect);
-
         SDL_SetRenderDrawColor(render, 255, 255, 255, 255);
+        */
+        SDL_RenderCopy(render, as->atom_texture, NULL, &rect);
+
         for (uint32_t j = 0; j < array_size(atom.neutrons); ++j)
         {
             const neutron_t* neutron = &atom.neutrons[j];
 
             SDL_Rect rect = sdl_rect_from_pos_and_size(
                 camera, neutron->pos, (vec2_t){NEUTRON_SIZE, NEUTRON_SIZE});
-            SDL_RenderFillRect(render, &rect);
+            // SDL_RenderDrawRect(render, &rect);
+            SDL_RenderCopy(render, as->neutron_texture, NULL, &rect);
         }
     }
 }

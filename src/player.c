@@ -12,7 +12,7 @@
 typedef struct player_o player_o;
 
 // @Todo: move this somewhere else.
-static const uint32_t PLAYER_SIZE = 30;
+static const vec2_t PLAYER_SIZE = {60, 40};
 
 struct player_o
 {
@@ -32,7 +32,7 @@ player_o* player_create(struct SDL_Renderer* render)
     // @Note @Todo: see later about custom allocators.
     player_o* player = malloc(sizeof(struct player_o));
     player->pos = (vec2_t){0, 0};
-    player->bounding_circle_radius = PLAYER_SIZE;
+    player->bounding_circle_radius = PLAYER_SIZE.x;
     player->texture = load_bmp_to_texture(render, "assets/images/cat.bmp");
 
     assert(player->texture);
@@ -47,7 +47,7 @@ void player_destroy(struct player_o* player)
     free(player);
 }
 
-void player_update(struct player_o* player, float dt)
+void player_update(struct player_o* player, world_t world, float dt)
 {
     assert(player);
 
@@ -60,7 +60,15 @@ void player_update(struct player_o* player, float dt)
         player->speed *= SLOWDOWN_FACTOR;
     }
 
-    vec2_t to_target = vec2_sub(player->target, player->pos);
+    // Update the target point for this update taking boundaries into account.
+    // This has the nice property of offering slowdown when close to world borders.
+    vec2_t target = player->target;
+    if (target.x > world.bounds.east) { target.x = world.bounds.east; }
+    else if (target.x < world.bounds.west) { target.x = world.bounds.west; }
+    if (target.y < world.bounds.south) { target.y = world.bounds.south; }
+    else if (target.y > world.bounds.north) { target.y = world.bounds.north; }
+
+    vec2_t to_target = vec2_sub(target, player->pos);
     if (!(to_target.x < 1e-5 && to_target.y < 1e-5)) // @Todo: this is a bit hacky.
     {
         player->dir = vec2_normalize(to_target);
@@ -101,11 +109,12 @@ void player_draw(struct player_o* player, struct camera_o* camera, struct SDL_Re
     assert(player && camera && render);
 
     SDL_Rect rect = sdl_rect_from_pos_and_size(
-        camera, player->pos, (vec2_t){PLAYER_SIZE, PLAYER_SIZE});
+        camera, player->pos, PLAYER_SIZE);
 
     SDL_SetRenderDrawColor(render, 255, 0, 0, 255);
-    SDL_RenderDrawRect(render, &rect);
-    SDL_RenderCopy(render, player->texture, NULL, &rect);
+    // SDL_RenderDrawRect(render, &rect);
+    SDL_RendererFlip flip = player->dir.x >= 0 ? SDL_FLIP_NONE : SDL_FLIP_HORIZONTAL;
+    SDL_RenderCopyEx(render, player->texture, NULL, &rect, 0, NULL, flip);
 }
 
 bool player_intersect_circle(struct player_o* player, circle_t other)
